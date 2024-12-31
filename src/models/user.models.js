@@ -1,7 +1,7 @@
 import mongoose,{Schema} from "mongoose";
 import jwt from "jsonwebtoken"
 import bcrypt from "bcrypt"
-const userSchema = new Schema({
+const userSchema = new Schema({//userSchema is a instance of mongoose schema
     watchhistory:[{
         type: mongoose.Schema.Types.ObjectId,
         ref:"Video"
@@ -55,7 +55,7 @@ userSchema.methods.isPasswordCorrect=async function (password) {
     return await bcrypt.compare(password,this.password);
 }//in this context 'this' refers to the function /user on which this function is called and it reeturns true or false
 //eg:const isMatch = await user.isPasswordCorrect('user-entered-password');
-userSchema.methods.generateAccessToken=function(){
+userSchema.methods.generateAccessToken=function(){//this method is created by instance for itself but not on prototype
     return jwt.sign(
         {
             _id:this._id,

@@ -37,4 +37,5 @@ Advance Backend startup
        3. it is used for generating token
        4. jwt.sign() to generate token
        5.[ it takes 3 arguments(payload,secretKey,options)](.env.sample)
-  *
+  * use cloudinary a library to help you upload files to cloudinary here we upload file from temprorary local file to cloudinary if failed we delete the local file
+  * multer is used as middleware to handle file upload
