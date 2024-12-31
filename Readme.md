@@ -34,4 +34,7 @@ Advance Backend startup
   * use jsonwebtoken, a library to help you create and verify JWT tokens.
        1. it is used for token based authentication
        2. it is used for authorization
+       3. it is used for generating token
+       4. jwt.sign() to generate token
+       5.[ it takes 3 arguments(payload,secretKey,options)](.env.sample)
   *
