@@ -21,3 +21,17 @@ Advance Backend startup
     - middleware is used for authentication like stuffs as we have to authenticate user before giving access to data
     - cookie parser for using cookies for data acceptance and sending
     - we used asyncHandler function as utility function to wrap up fn
+    - next is used for middleware chain
+  
+  ## models
+  * we used mongoose schema and model to create models
+  * futher we use a package called mongoose-aggregate-paginate-v2 to add pagination to our models
+      1. it is used for custom query in database
+      2. it allows us to use custom plugins 
+  * use bcrypt, a library to help you hash passwords.
+       1. it is used for password hashing
+       2. we can also compare encrypted password and plan password as password is ecrypted before saving in database
+  * use jsonwebtoken, a library to help you create and verify JWT tokens.
+       1. it is used for token based authentication
+       2. it is used for authorization
+  *
