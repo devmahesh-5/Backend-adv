@@ -39,3 +39,19 @@ Advance Backend startup
        5.[ it takes 3 arguments(payload,secretKey,options)](.env.sample)
   * use cloudinary a library to help you upload files to cloudinary here we upload file from temprorary local file to cloudinary if failed we delete the local file
   * multer is used as middleware to handle file upload
+
+- we seperate the controllers and router to maintain good practice.
+
+## [Controllers](./src/controllers/user.controller.js)
+* we used asyncHandler function as utility function to wrap up functions
+* Controllers define what happens when a specific route is accessed.
+  
+[check app.js](./src/app.js)
+   
+## [Routes](./src/routes/user.routes.js)
+* Routes define the URL patterns and HTTP methods that the application responds to.
+* A route is a mapping between a URL and a controller function.
+* A route acts as a "traffic director" that decides which controller function to execute based on the incoming request.
+* route is import and declared in app.js with app.use('route-url',router) method and the routes.js is activated
+
+*********** for example: routes is /user and controller is the function that sends response to the /user url
