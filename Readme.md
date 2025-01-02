@@ -55,3 +55,21 @@ Advance Backend startup
 * route is import and declared in app.js with app.use('route-url',router) method and the routes.js is activated
 
 *********** for example: routes is /user and controller is the function that sends response to the /user url
+
+## for solving any problem break it down on smaller chunks/steps(thats algorithm)
+
+### user Register   -->  algorithm for user register 
+ 1. get user data from frontend
+ 2. validate user data
+ 3. check if user already exists(email/username)
+ 4. check for images,avatar
+ 5. upload image to cloudinary
+ 6. create user object in database
+ 7. remove password and refresh token from response
+ 8. check for user creation
+ 9. send response to frontend 
+
+- we upload file to cloudinary and save the url in database
+- before uploading file to cloudinary we first save the file locally
+- we use multer middleware to handle file upload   
+- First thing controllers runs after user set data and click submit but using middleware, middleware runs (here files upload) and then only other data is got from user in controller
