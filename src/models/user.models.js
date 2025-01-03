@@ -27,7 +27,7 @@ const userSchema = new Schema({//userSchema is a instance of mongoose schema
        trim: true,
        index: true
    },
-   avtar: {
+   avatar: {
        type: String,//cloudnary url
        requied: true
    },
@@ -48,7 +48,7 @@ const userSchema = new Schema({//userSchema is a instance of mongoose schema
 
 userSchema.pre("save", async function(next){//we dont use arrow function as it has no access to this context
     if(!this.isModified("password")) return next();
-    this.password= bcrypt.hash(this.password,10);
+    this.password= await bcrypt.hash(this.password,10);
     next()//for another middleware 
 })//middleware run before saving and change password with hash value of password
 userSchema.methods.isPasswordCorrect=async function (password) {

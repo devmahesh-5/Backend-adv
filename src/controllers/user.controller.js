@@ -2,7 +2,9 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.models.js";
 import uploadOnCloudinary from "../utils/cloudinary.js";
-const registerUser = asyncHandler(async (req, res) => {
+import { Apiresponse } from "../utils/Apiresponse.js";
+const registerUser = asyncHandler(async (req, res,next) => {
+    //get data
     const { username, password, fullName, email } = req.body;
     console.log("Email:", email);
     //validate user data
@@ -12,7 +14,7 @@ const registerUser = asyncHandler(async (req, res) => {
         throw new ApiError(400, "All fields are required");
     }
 
-    const existingUser = User.findOne({
+    const existingUser = await User.findOne({
         $or: [{ username }, { email }]
     })
     if (existingUser) {
@@ -25,15 +27,32 @@ const registerUser = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Avatar is required");
     }
 
-    const avatarCloudnary = await uploadOnCloudinary(avatarLocalPath);
+
+    const avatarCloudinary = await uploadOnCloudinary(avatarLocalPath);
     const coverImageCloudinary = await uploadOnCloudinary(coverImageLocalPath)
-    if (!avatarCloudnary || !coverImageCloudinary) {
+    if (!avatarCloudinary) {
         throw new ApiError(500, "Avatar not uploaded");
     }
-    
-    res.status(200).json({
-        message: "User registered successfully"
+
+    const user = await User.create({
+        avatar: avatarCloudinary.url,
+        coverImage: coverImageCloudinary?.url,
+        username: username.toLowerCase(),
+        password,
+        fullName,
+        email
     })
+
+    const createdUser = await User.findById(user._id).select(
+        "-password -refreshToken"//dont accept password and refreshToken
+    );
+    if(!createdUser){
+        throw new ApiError(500,"something went wrong while registering the user")
+    }
+
+    return res.status(201).json(
+        new Apiresponse(200,createdUser,"User Registered sucessfully")
+    )
 
 
 
