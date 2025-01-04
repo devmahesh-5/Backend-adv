@@ -3,6 +3,20 @@ import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.models.js";
 import uploadOnCloudinary from "../utils/cloudinary.js";
 import { Apiresponse } from "../utils/Apiresponse.js";
+
+const generateAccessAndRefreshToken =async(userId)=>{
+    try {
+        const user = await User.findById(userId);
+        const accessToken = await user.generateAccessToken();//see
+        const refreshToken = await user.generateRefreshToken();
+        user.refreshToken = refreshToken;
+        await user.save({validateBeforeSave : false})
+        return {accessToken, refreshToken};
+    } catch (error) {
+        throw new ApiError(500,"Something went wrong while generating access and refresh token");
+    }
+}
+
 const registerUser = asyncHandler(async (req, res, next) => {
     //get data
     const { username, password, fullName, email } = req.body;
@@ -66,4 +80,61 @@ const registerUser = asyncHandler(async (req, res, next) => {
 
 })
 
-export { registerUser }
+const loginUSer = asyncHandler(async (req, res) => {
+    //   get user data(email/username) from frontend(req.body)
+    //   check if user exists in database
+    //   check if password is correct
+    //   generate access token and refresh token
+    //   send response to frontend (send cookies)
+    const {username,email,password}=req.body;
+    if(!username && !email){
+        throw new ApiError(400,"Username or email required!");
+    }
+
+    const loggedUser=User.findOne(
+        {
+            $or:[{username},{email}]
+        }
+    )
+    if(!loggedUser){
+        throw new ApiError(404,"User not registered")
+    }
+
+    const isPasswordValid = await loggedUser.isPasswordCorrect(password)
+    if(!isPasswordValid){
+        throw new ApiError(401,"Invalid User Credential")
+    }
+
+    const {accessToken,refreshToken} = await generateAccessAndRefreshToken(loggedUser._id)
+
+    //now updateuser with not accepting password
+    const updatedLoggedUser=User.findById(loggedUser._id).select(
+        "-password -refreshToken"
+    )
+
+    //now send cookies
+
+    const options ={
+        httpOnly: true,
+        secure : true
+    }//this ensures that cookie is not modifiable from frontend
+
+    res.
+    status(200)
+    .cookie("accessToken",accessToken)
+    .cookie("refreshToken",refreshToken)
+    .json(
+        new Apiresponse(
+            200,
+            {
+                user:updatedLoggedUser,accessToken,refreshToken
+            },
+            "User logged in Successfully"
+        )
+    )
+})
+
+const logoutUSer = asyncHandler(async(req,res)=>{
+    
+})
+export { registerUser, loginUSer }

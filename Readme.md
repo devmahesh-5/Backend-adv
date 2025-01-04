@@ -73,3 +73,19 @@ Advance Backend startup
 - before uploading file to cloudinary we first save the file locally
 - we use multer middleware to handle file upload   
 - First thing controllers runs after user set data and click submit but using middleware, middleware runs (here files upload) and then only other data is got from user in controller
+- we get data of current user from database after user created and but refreshToken and password is not sent to frontend
+
+# Refresh Token & Access Token
+- refresh token is used to get new access token
+- access token is used for authentication and authorization
+- once access token expires we get new access token using refresh token
+- refresh token has longer validity than access token
+
+# user Login   -->  algorithm for user login
+ 1. get user data(email/username) from frontend(req.body)
+ 2. check if user exists in database
+ 3. check if password is correct
+ 4. generate access token and refresh token
+ 5. send response to frontend (send cookies)
+ 
+ * while sending cookie send options with httpOnly and secure also to ensure that cookie is not modifiable from frontend

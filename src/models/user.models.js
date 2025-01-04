@@ -40,7 +40,7 @@ const userSchema = new Schema({//userSchema is a instance of mongoose schema
        min: [6, 'Must be at least 6, got {VALUE}'],
        max: 12
    },
-   refreshtoken:{
+   refreshToken:{
     type:String
    }
 
