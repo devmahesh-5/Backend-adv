@@ -80,7 +80,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
 
 })
 
-const loginUSer = asyncHandler(async (req, res) => {
+const loginUser = asyncHandler(async (req, res) => {
     //   get user data(email/username) from frontend(req.body)
     //   check if user exists in database
     //   check if password is correct
@@ -104,7 +104,6 @@ const loginUSer = asyncHandler(async (req, res) => {
     if(!isPasswordValid){
         throw new ApiError(401,"Invalid User Credential")
     }
-
     const {accessToken,refreshToken} = await generateAccessAndRefreshToken(loggedUser._id)
 
     //now updateuser with not accepting password
@@ -134,7 +133,41 @@ const loginUSer = asyncHandler(async (req, res) => {
     )
 })
 
-const logoutUSer = asyncHandler(async(req,res)=>{
-    
+const logoutUser = asyncHandler(async(req,res)=>{
+    const user = req.user;
+    //if user? delete refresh token from database
+    if(!user){
+        throw new ApiError(404,"User not found");  
+    }
+
+    await User.findByIdAndUpdate(
+        user._id,
+        {
+           $set: {
+            refreshToken: undefined
+           }
+        },
+        {
+            new : true
+        }
+    )
+    //now update the cookies
+    options ={
+        httpOnly: true,
+        secure : true
+    }
+
+    res
+    .status(200)
+    .clearCookie("accessToken")
+    .clearCookie("refreshToken")
+    .json(
+        new Apiresponse(
+            200,
+            {},
+            "user logged out successfully"
+        )
+        
+    )
 })
-export { registerUser, loginUSer }
+export { registerUser, loginUser,logoutUser }

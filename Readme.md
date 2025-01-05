@@ -89,3 +89,11 @@ Advance Backend startup
  5. send response to frontend (send cookies)
  
  * while sending cookie send options with httpOnly and secure also to ensure that cookie is not modifiable from frontend
+
+# user Logout   -->  algorithm for user logout
+* we use a middleware to handle logout it use use cookie to get refresh token and access token
+* for mobile user accessing jwt token is done using req.header("authorization") it returns bearer <token>
+* Algorithm
+ 1. make a middleware to verify jwt token and get user (it may be used for other routes also)
+ 2. from the user we got, delete refresh token in database
+ 3. send response to the frontend(i.e, clear cookies)
