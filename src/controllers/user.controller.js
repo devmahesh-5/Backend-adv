@@ -3,7 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.models.js";
 import uploadOnCloudinary from "../utils/cloudinary.js";
 import { Apiresponse } from "../utils/Apiresponse.js";
-
+import mongoose from "mongoose";
 const generateAccessAndRefreshToken =async(userId)=>{
     try {
         const user = await User.findById(userId);
@@ -53,7 +53,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
     const avatarCloudinary = await uploadOnCloudinary(avatarLocalPath);
     const coverImageCloudinary = await uploadOnCloudinary(coverImageLocalPath);
     if (!avatarCloudinary) {
-        throw new ApiError(500, "Avatar not uploaded");
+        throw new ApiError(401, "Avatar not uploaded");
     }
 
     const user = await User.create({
@@ -87,25 +87,31 @@ const loginUser = asyncHandler(async (req, res) => {
     //   generate access token and refresh token
     //   send response to frontend (send cookies)
     const {username,email,password}=req.body;
+    //console.log("Body:",req.body);
+    
     if(!username && !email){
         throw new ApiError(400,"Username or email required!");
     }
 
-    const loggedUser=User.findOne(
+    const loggedUser=await User.findOne(
         {
             $or:[{username},{email}]
         }
     )
+
     if(!loggedUser){
         throw new ApiError(404,"User not registered")
     }
 
+   // console.log(loggedUser instanceof mongoose.Document); // Should log `true`
+    // console.log(loggedUser)
     const isPasswordValid = await loggedUser.isPasswordCorrect(password)
     if(!isPasswordValid){
         throw new ApiError(401,"Invalid User Credential")
     }
-    const {accessToken,refreshToken} = await generateAccessAndRefreshToken(loggedUser._id)
-
+    const {accessToken,refreshToken} = await generateAccessAndRefreshToken(loggedUser._id);
+    //console.log("Access Token ",accessToken,refreshToken);
+    
     //now updateuser with not accepting password
     const updatedLoggedUser=User.findById(loggedUser._id).select(
         "-password -refreshToken"
@@ -120,13 +126,13 @@ const loginUser = asyncHandler(async (req, res) => {
 
     res.
     status(200)
-    .cookie("accessToken",accessToken)
-    .cookie("refreshToken",refreshToken)
+    .cookie("accessToken",accessToken, options)
+    .cookie("refreshToken",refreshToken, options)
     .json(
         new Apiresponse(
             200,
             {
-                user:updatedLoggedUser,accessToken,refreshToken
+                user: accessToken,refreshToken
             },
             "User logged in Successfully"
         )
@@ -151,16 +157,15 @@ const logoutUser = asyncHandler(async(req,res)=>{
             new : true
         }
     )
-    //now update the cookies
-    options ={
+    //now clear the cookies 
+    const options ={
         httpOnly: true,
         secure : true
     }
-
     res
     .status(200)
-    .clearCookie("accessToken")
-    .clearCookie("refreshToken")
+    .clearCookie("accessToken",options)
+    .clearCookie("refreshToken",options)
     .json(
         new Apiresponse(
             200,
