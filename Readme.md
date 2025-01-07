@@ -80,6 +80,7 @@ Advance Backend startup
 - access token is used for authentication and authorization
 - once access token expires we get new access token using refresh token
 - refresh token has longer validity than access token
+- fontend engineer will use refresh token to get new access token by hitting specific endpoint
 
 # user Login   -->  algorithm for user login
  1. get user data(email/username) from frontend(req.body)

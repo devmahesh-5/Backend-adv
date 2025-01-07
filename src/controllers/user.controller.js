@@ -4,6 +4,8 @@ import { User } from "../models/user.models.js";
 import uploadOnCloudinary from "../utils/cloudinary.js";
 import { Apiresponse } from "../utils/Apiresponse.js";
 import mongoose from "mongoose";
+import jwt from "jsonwebtoken";
+import { options } from "../constants.js";
 const generateAccessAndRefreshToken =async(userId)=>{
     try {
         const user = await User.findById(userId);
@@ -17,7 +19,7 @@ const generateAccessAndRefreshToken =async(userId)=>{
     }
 }
 
-const registerUser = asyncHandler(async (req, res, next) => {
+const registerUser = asyncHandler(async (req, res) => {
     //get data
     const { username, password, fullName, email } = req.body;
     // console.log("Email:", email);
@@ -57,7 +59,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
     }
 
     const user = await User.create({
-        avatar: avatarCloudinary.url,
+        avatar: avatarCloudinary?.url,
         coverImage: coverImageCloudinary?.url || "",
         username: username.toLowerCase(),
         password,
@@ -119,10 +121,10 @@ const loginUser = asyncHandler(async (req, res) => {
 
     //now send cookies
 
-    const options ={
-        httpOnly: true,
-        secure : true
-    }//this ensures that cookie is not modifiable from frontend
+    // const options ={
+    //     httpOnly: true,
+    //     secure : true
+    // }//this ensures that cookie is not modifiable from frontend
 
     res.
     status(200)
@@ -132,7 +134,7 @@ const loginUser = asyncHandler(async (req, res) => {
         new Apiresponse(
             200,
             {
-                user: accessToken,refreshToken
+                user: {accessToken,refreshToken}
             },
             "User logged in Successfully"
         )
@@ -158,10 +160,7 @@ const logoutUser = asyncHandler(async(req,res)=>{
         }
     )
     //now clear the cookies 
-    const options ={
-        httpOnly: true,
-        secure : true
-    }
+   
     res
     .status(200)
     .clearCookie("accessToken",options)
@@ -175,4 +174,47 @@ const logoutUser = asyncHandler(async(req,res)=>{
         
     )
 })
-export { registerUser, loginUser,logoutUser }
+
+const refreshAccessToken =asyncHandler(async(req,res)=>{
+    const receivedRefreshToken = await req.cookies?.refreshToken || req.body.refreshToken;
+    if(!receivedRefreshToken){
+        throw new ApiError(401,"Refresh token not found");
+    }
+
+    try {
+        const decodedToken = jwt.verify(
+            receivedRefreshToken,
+            REFRESH_TOKEN_SCERET
+        );
+        if (!decodedToken) {
+            throw new ApiError(500,"Could not decode refresh token");
+        }
+    
+        const user = await User.findById(decodedToken?._id);
+    
+        if (!user) {
+            throw new ApiError(500, "cannot fetch User");
+        }
+    
+        if (receivedRefreshToken !== user.refreshToken){
+            throw new ApiError(401, "Refresh Token Expired or used");
+        }
+        const {accessToken,newRefreshToken} = await user.generateAccessAndRefreshToken(user._id)
+    
+        res
+        .status(200,"User Session Refrshed Sucessfully")
+        .cookie("accessToken",accessToken, options)
+        .cookie("refreshToken",newRefreshToken, options)
+        .json(
+            new Apiresponse(200,
+                {
+                    accessToken,
+                    refreshToken:newRefreshToken
+            },
+            "User Session Refrshed Sucessfully"
+        ) )
+    } catch (error) {
+        throw new ApiError(400,"Something went wrong while getting refresh token")
+    }
+})
+export { registerUser, loginUser,logoutUser,refreshAccessToken }
