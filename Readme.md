@@ -98,3 +98,20 @@ Advance Backend startup
  1. make a middleware to verify jwt token and get user (it may be used for other routes also)
  2. from the user we got, delete refresh token in database
  3. send response to the frontend(i.e, clear cookies)
+
+# RefreshAccessToken   -->  algorithm for refresh access token
+   1. we use a middleware to handle refresh access token it use use cookie to get refresh token and access token
+  2. get user and rungenerateAccessAndRefreshToken
+  3. send response to the frontend(i.e, set cookies)
+
+# updatePassword   -->  algorithm for update password
+  1. get current and old password from frontend(req.body)
+  2. check if old password is correct
+  3. if password is correct update password in database
+  4. save user in database
+
+# getCurrentUser   -->  algorithm for get current user
+  1. we use a middleware to handle get current user it use use cookie to get refresh token and access token
+  2. get user and send response to frontend
+
+# 
