@@ -114,4 +114,13 @@ Advance Backend startup
   1. we use a middleware to handle get current user it use use cookie to get refresh token and access token
   2. get user and send response to frontend
 
-# 
+# subscription Schema and Model
+  1. we use mongoose schema and model to create models
+  2. in this model, every time subscription is updated we create a new document in subscription collection(i.e, document is created every time when new subscribe or channel is created ) 
+  3. we get count of subscriber for any (say x) channel by counting documents where channel is 'x'
+  4. we get total subscribed channels of user (y) by counting documents where subscriber is 'y'
+
+# Aggregation Pipeline
+  - consists of stages
+  - each stage performs operation on input documents
+  - output of one stage is input of next stage

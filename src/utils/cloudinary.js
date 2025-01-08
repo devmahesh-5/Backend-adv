@@ -30,4 +30,21 @@ import fs from "fs";
         return null;
     }
  }
+
+ export const deleteFromCloudinary = async (publicId)=>{
+    try {
+        if (!publicId) return null;
+        // Upload to Cloudinary
+        const deleteResult = await cloudinary.uploader
+        .destroy(publicId,{
+            resource_type:'auto',
+        })
+        return deleteResult;
+
+    } catch (error) {
+        
+        console.log("Cloudinary file deletion error::",error);
+        return null;
+    }
+ }
  export default uploadOnCloudinary;

@@ -3,7 +3,6 @@ import  {loginUser, registerUser,logoutUser,refreshAccessToken, updateUserPasswo
 const router = Router();
 import {upload} from '../middlewares/multer.middleware.js'
 import { verifyJWT } from "../middlewares/auth.middlewares.js";
-import { get } from "mongoose";
 router.route('/register').post(//first thing controllers runs after user set data and click submit but using middleware, middleware runs (here files upload) and then only other data is got from user in controller
     upload.fields([
         {
