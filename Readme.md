@@ -124,3 +124,5 @@ Advance Backend startup
   - consists of stages
   - each stage performs operation on input documents
   - output of one stage is input of next stage
+  - these are used to build relationship between models 
+  - watch out line number 420 at [user.controller.js](./src/controllers/user.controller.js)
