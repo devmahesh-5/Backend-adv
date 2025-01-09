@@ -59,10 +59,15 @@ router.route('/updateCoverImage').patch(
     verifyJWT,
     upload.fields(
         [
-           { name:'acoverImage',
+           { name:'coverImage',
             maxCount:1}
         ]
     ),
     updateCoverImage
+)
+
+router.route('/getUserChannelProfile').get(
+    verifyJWT,
+    getUserChannelProfile
 )
 export default router;

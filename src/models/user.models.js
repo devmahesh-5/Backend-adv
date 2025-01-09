@@ -2,7 +2,7 @@ import mongoose,{Schema} from "mongoose";
 import jwt from "jsonwebtoken"
 import bcrypt from "bcrypt"
 const userSchema = new Schema({//userSchema is a instance of mongoose schema
-    watchhistory:[{
+    watchHistory:[{
         type: mongoose.Schema.Types.ObjectId,
         ref:"Video"
     }],

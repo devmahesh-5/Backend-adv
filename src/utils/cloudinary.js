@@ -37,7 +37,7 @@ import fs from "fs";
         // Upload to Cloudinary
         const deleteResult = await cloudinary.uploader
         .destroy(publicId,{
-            resource_type:'auto',
+            resource_type:'image',
         })
         return deleteResult;
 

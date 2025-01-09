@@ -341,8 +341,10 @@ const updateAvatar = asyncHandler(async (req, res) => {
 
     const oldUser = await User.findById(req.user?._id).select("-password");
     const oldUserAvatar = oldUser.avatar;
-    avatarPublicId = oldUserAvatar.split('/').pop().split('.')[0];
-    const avatarLocalPath = req.file?.avatar[0]?.path;
+    const avatarPublicId = oldUserAvatar.split('/').pop().split('.')[0];
+    const avatarLocalPath = req.files?.avatar[0]?.path;
+    //console.log(avatarLocalPath);
+
     if (!avatarLocalPath) {
         throw new ApiError(401, "Avatar image is required")
     }
@@ -375,11 +377,11 @@ const updateCoverImage = asyncHandler(async (req, res) => {
     //upload on cloudinary
     //update cloudinaryurl on database
     const oldUser = await User.findById(req.user?._id).select("-password");
-    const oldUsercoverImage = oldUser.avatar;
-    coverImagePublicId = oldUsercoverImage.split('/').pop().split('.')[0];
+    const oldUsercoverImage = oldUser.coverImage;
+    const coverImagePublicId = oldUsercoverImage.split('/').pop().split('.')[0];
     let coverImageLocalPath;
-    if (req.file && Array.isArray(req.file.coverImage) && req.file.coverImage.length > 0) {
-        coverImageLocalPath = req.file.coverImage[0].path;
+    if (req.files && Array.isArray(req.files?.coverImage) && req.files?.coverImage.length > 0) {
+        coverImageLocalPath = req.files?.coverImage[0].path;
     }
     const coverImageCloudinary = await uploadOnCloudinary(coverImageLocalPath);
     if (!coverImageCloudinary) {
@@ -463,15 +465,64 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
 
             }
         ])
-        
-        if(!channel?.length){
-            throw new ApiError(404,"Channel doesnot exist");
-        }
 
-        res.status(200)
+    if (!channel?.length) {
+        throw new ApiError(404, "Channel doesnot exist");
+    }
+
+    res.status(200)
         .json(
-            new Apiresponse(200,channel[0], "Channel Fetched Sucessfully")
+            new Apiresponse(200, channel[0], "Channel Fetched Sucessfully")
         )
 })
 
-export { registerUser, loginUser, logoutUser, refreshAccessToken, updateUserPassword, updateUserDetails, getCurrentUser, updateAvatar, updateCoverImage, getUserChannelProfile }
+const getWatchHistory = asyncHandler(async (req, res) => {
+    const user = User.aggregate([
+        {
+            $match: {
+                id: new mongoose.Types.ObjectId(
+                    req.user?._id
+                )
+            }
+        },
+        {
+            $lookup: {
+                from: "videos",
+                localField: "watchHistory",//this is initially array of objectIds
+                foreignField: "_id",
+                as: "WatchHistory",
+                pipeline: [//nested pipeline
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "owner",//id of one user among User documents across the database
+                            foreignField: "_id",
+                            as: "owner",
+                            //you may need to add another pipeline for project if this code not work
+                        },
+                        $project : {
+                            fullName : 1,
+                            username : 1,
+                            avatar : 1
+                        },
+                        $addFields:{
+                            $first : "$owner"//first element of owner
+                        }
+
+                    }
+                ]
+            }
+
+        }
+
+    ])
+
+    res
+    .status(200)
+    .json(
+        new Apiresponse(200,user[0]?.watchHistory, "Watch History Fetch Successfully")
+    )
+
+})
+
+export { registerUser, loginUser, logoutUser, refreshAccessToken, updateUserPassword, updateUserDetails, getCurrentUser, updateAvatar, updateCoverImage, getUserChannelProfile, getWatchHistory }
