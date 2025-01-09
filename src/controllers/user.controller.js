@@ -343,7 +343,7 @@ const updateAvatar = asyncHandler(async (req, res) => {
     const oldUserAvatar = oldUser.avatar;
     const avatarPublicId = oldUserAvatar.split('/').pop().split('.')[0];
     const avatarLocalPath = req.files?.avatar[0]?.path;
-    //console.log(avatarLocalPath);
+    console.log(avatarLocalPath);
 
     if (!avatarLocalPath) {
         throw new ApiError(401, "Avatar image is required")
@@ -383,6 +383,8 @@ const updateCoverImage = asyncHandler(async (req, res) => {
     if (req.files && Array.isArray(req.files?.coverImage) && req.files?.coverImage.length > 0) {
         coverImageLocalPath = req.files?.coverImage[0].path;
     }
+    console.log(coverImageLocalPath);
+    
     const coverImageCloudinary = await uploadOnCloudinary(coverImageLocalPath);
     if (!coverImageCloudinary) {
         throw new ApiError(500, "Error Uploading CoverImage in cloudinary")
@@ -419,7 +421,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
     //lookup subscription model and user model for subscriber and subscribed count
     //
 
-    const channel = User.aggregate(//will have additional field to username matched dataset with 1. subscribers (subscription models having channel as id of matched username)  2. ...  3. subscriberCount and 4. subscribedCount
+    const channel = await User.aggregate(//will have additional field to username matched dataset with 1. subscribers (subscription models having channel as id of matched username)  2. ...  3. subscriberCount and 4. subscribedCount
         [
             {
                 $match: { username: username?.toLowerCase() }
@@ -427,16 +429,20 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
             {
                 $lookup: {
                     from: "subscriptions",
-                    localField: " _id",
+                    localField: "_id",
                     foreignField: "channel",
                     as: "subscribers"
-                },
+                }
+            },
+            {
                 $lookup: {
                     from: "subscriptions",
-                    localField: " _id",
+                    localField: "_id",
                     foreignField: "subscriber",
                     as: "subscribedTo"
-                },
+                }
+            },
+            { 
                 $addFields: {
                     subscriberCount: {
                         $size: "$subscribers"
@@ -451,21 +457,25 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
                             else: false
                         }
                     },
-                    $project: {
-                        fullName: 1,
-                        username: 1,
-                        email: 1,
-                        subscriberCount: 1,
-                        subscribedCount: 1,
-                        isSubscribed: 1,
-                        avatar: 1,
-                        coverImage: 1
-                    }
+                    
+                },
+            },
+            {
+                $project: {
+                    fullName: 1,
+                    username: 1,
+                    email: 1,
+                    subscriberCount: 1,
+                    subscribedCount: 1,
+                    isSubscribed: 1,
+                    avatar: 1,
+                    coverImage: 1
                 }
 
             }
         ])
-
+        console.log(channel);
+        
     if (!channel?.length) {
         throw new ApiError(404, "Channel doesnot exist");
     }
@@ -520,7 +530,7 @@ const getWatchHistory = asyncHandler(async (req, res) => {
     res
     .status(200)
     .json(
-        new Apiresponse(200,user[0]?.watchHistory, "Watch History Fetch Successfully")
+        new Apiresponse(200,user[0]?.watchHistory, "Watch History Fetch Successfuly")
     )
 
 })
