@@ -126,3 +126,67 @@ Advance Backend startup
   - output of one stage is input of next stage
   - these are used to build relationship between models 
   - watch out line number 420 at [user.controller.js](./src/controllers/user.controller.js)
+
+# Pagination
+What is Pagination?
+
+pagination is nothing but concept of  providing structure for objects or content in web page.
+
+for example: we want to show only 10 videos in our webpage and when we click on next the next page pops up and we see it starts with 11th video.
+
+this is all about pagination.
+
+traditionally, two main stage is used for it skip and limit 
+
+skip mean what to skip for a page
+
+limit means how many datas to be shown in the present page.
+
+what is Aggregation ?
+
+Aggregation in mongodb is concept of linking models with stages
+
+each stage being input to another stage.
+
+stages are $match , $lookup, $project ...
+
+now how to relate these two?
+
+it is simple
+
+ we first create index for the database collection (for which we want to search and apply pagination)
+Remeber that path is fileld of the collection(or key) and query is the value of field
+we apply search on the index(i.e, specific model ) for path to be query and get all the data. 
+after getting data we use stages to manipulate datasets
+searchAfter is the stage which contain pagination token which is created for each page specifies the what is last object/content
+paginated token is created with { "$meta" : "searchSequenceToken" } syntax and sent to frontend as resonse and later it is used in searchAfter stage.
+//Here is the code
+db.movies.aggregate([
+  {
+    "$search": {
+      "index": "pagination-tutorial",
+      "text": {
+        "path": "title",
+        "query": "summer"
+      },
+      "searchAfter": "COwRGgkpAPQV0hQAAAA=",
+      "sort": { "released": 1 }
+    }
+  },
+  {
+    "$limit": 10
+  },
+  {
+    "$project": {
+      "_id": 0,
+      "title": 1,
+      "released": 1,
+      "genres": 1,
+      "paginationToken" : { "$meta" : "searchSequenceToken" },
+      "score": { "$meta": "searchScore" }
+    }
+  }
+])
+  
+
+so this code gets 10 document for each page and update pagination token.
