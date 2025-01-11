@@ -34,41 +34,95 @@ const createPlaylist = asyncHandler(async (req, res) => {
 
 const getUserPlaylists = asyncHandler(async (req, res) => {// we might use pagination
     const {userId} = req.params
+    const paginationToken = req.query.paginationToken
     if (userId?.trim() === "") {
         throw new ApiError(400, "User id is required");
     }
     const userPlaylist = await Playlist.aggregation(
         [
             {
-                $match: {//instead we can use $search { index:"index defined for playlist collection",{query: userId, path: "owner"} }
-                    owner: mongoose.Types.ObjectId(userId)
+                // $match: {//instead we can use $search { index:"index defined for playlist collection",{query: userId, path: "owner"} }
+                //     owner: mongoose.Types.ObjectId(userId)
+                // },
+                // $lookup: {
+                //     from : "videos",
+                //     localField : "videos",
+                //     foreignField : "_id",
+                //     as : "videos",
+                //     pipeline : [
+                //         {
+                //         $lookup : {
+                //             from : "users",
+                //             localField : "owner",
+                //             foreignField : "_id",
+                //             as : "owner"
+                //         },
+                //         $project : {
+                //             fullName : 1,
+                //             username : 1,
+                //             avatar : 1
+                //         },
+                //         $addFields:{
+                //             $first : "$owner"//first element of owner
+                //         }
+                //     }
+                //     ]
+                // }
+
+                $search : {
+                    index : "playlist_index",
+                    text : { 
+                        query : userId,
+                        path : "owner"
+                        },
+                    searchAfter : paginationToken || undefined
                 },
-                $lookup: {
+            },
+                {
+                    $limit: 10
+                  },
+            {
+                $lookup : {
                     from : "videos",
                     localField : "videos",
                     foreignField : "_id",
                     as : "videos",
                     pipeline : [
                         {
-                        $lookup : {
-                            from : "users",
-                            localField : "owner",
-                            foreignField : "_id",
-                            as : "owner"
+                            $lookup : {
+                                from : "users",
+                                localField : "owner",
+                                foreignField : "_id",
+                                as : "owner"
+                            }
                         },
-                        $project : {
-                            fullName : 1,
-                            username : 1,
-                            avatar : 1
+                        {
+                            $project : {
+                                fullName : 1,
+                                username : 1,
+                                avatar : 1
+                            }
                         },
-                        $addFields:{
-                            $first : "$owner"//first element of owner
+                        { 
+                            $addFields : {
+                                $first : "$owner"
+                            }
                         }
-                    }
                     ]
                 }
+            },
+            {
+                $project : {
+                    name : 1,
+                    description : 1,
+                    owner : 1,
+                    videos : 1,
+                    paginationToken : { $meta : "searchSequenceToken" }
+                }
+
             }
         ]
+
     )
 
     res.status(200).json(
