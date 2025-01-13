@@ -189,4 +189,6 @@ db.movies.aggregate([
 ])
   
 
-so this code gets 10 document for each page and update pagination token.
+so this code gets 10 document for each page and update pagination token but it wont be for jumping pages
+- we use limit and skip for jumping pages watch out line number 54 at [video.controller.js](./src/controllers/video.controller.js)
+- we use $ to get field of model right? and to add field we dont need $field : value
