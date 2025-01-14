@@ -78,7 +78,7 @@ router.route('/updateCoverImage').patch(
     updateCoverImage
 )
 
-router.route('/channel/:username').get(
+router.route('/c/:username').get(
     verifyJWT,
     getUserChannelProfile
 )

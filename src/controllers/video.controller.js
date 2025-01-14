@@ -102,7 +102,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
         throw new ApiError(400, "All fields are required");
     }
     
-    const localVideoPath = req.files?.video[0]?.path
+    const localVideoPath = req.files?.videoFile[0]?.path
     const localThumbnailPath = req.files?.thumbnail[0]?.path
 
     if(!localVideoPath || !localThumbnailPath) {
