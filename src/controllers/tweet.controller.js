@@ -1,6 +1,6 @@
 import mongoose, { isValidObjectId } from "mongoose"
-import {Tweet} from "../models/tweet.model.js"
-import {User} from "../models/user.model.js"
+import {Tweet} from "../models/tweet.models.js"
+import {User} from "../models/user.models.js"
 import {ApiError} from "../utils/ApiError.js"
 import {Apiresponse} from "../utils/Apiresponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
@@ -37,14 +37,19 @@ const createTweet = asyncHandler(async (req, res) => {
 const getUserTweets = asyncHandler(async (req, res) => {
     //Algorithm
     //get tweets by user id
+    const userId = req.params.userId
+    if(userId?.trim() === "") {
+        throw new ApiError(400, "User id is required");
+    }
     const tweets = await Tweet.find(
-        {owner : req.user?._id}
+        {owner : userId}
     ).select("-owner")
 
-    if(!tweets) {
+    if(!tweets || tweets.length === 0) {
         throw new ApiError(500, "Something went wrong while getting tweets");
     }
-
+    //console.log(tweets);
+    
     res
     .status(200)
     .json(
@@ -59,7 +64,9 @@ const getUserTweets = asyncHandler(async (req, res) => {
 const updateTweet = asyncHandler(async (req, res) => {
     const {content} = req.body
     const tweetId = req.params.tweetId
-    if (content?.trim() === "" || !tweetId) {
+    //console.log("content",content,"TweetId",tweetId);
+    
+    if (!content || content?.trim() === "" || !tweetId) {
         throw new ApiError(400, "all fields are required");
     }
 
