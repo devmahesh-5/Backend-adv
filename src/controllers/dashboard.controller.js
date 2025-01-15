@@ -104,11 +104,17 @@ const getChannelStats = asyncHandler(async (req, res) => {
                     as : "subscribers",//subscriptions model
             }
         },
-        { 
-            $addFields : {
-            subscribersCount : {$size : "$subscribers"}
-        }
-    },
+        {
+            $group : {
+                _id : "$_id",
+                subscribersCount : {$sum : 1}
+            }
+        },
+    //     { 
+    //         $addFields : {
+    //         subscribersCount : {$size : "$subscribers"}
+    //     }
+    // },
     {
         $project : {
             _id : 0,
@@ -119,7 +125,7 @@ const getChannelStats = asyncHandler(async (req, res) => {
     ]
     )
 
-    // const subscribersCount = await Subscription.aggregate(
+    // const totalSubscribers = await Subscription.aggregate(
     //     [
     //         {
     //             $match: {
@@ -127,13 +133,13 @@ const getChannelStats = asyncHandler(async (req, res) => {
     //             }
     //         },
     //         {
-    //             $count : "subscribersCount"
+    //             $count : "totalDocuments"
     //         },
-    //         {
-    //             $project : {
-    //                 subscribersCount : 1
-    //             }
-    //         }
+    //         // {
+    //         //     $project : {
+    //         //         subscribersCount : 1
+    //         //     }
+    //         // }
     //     ]
     // )
 
