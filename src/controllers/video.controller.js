@@ -4,17 +4,19 @@ import {User} from "../models/user.models.js"
 import {ApiError} from "../utils/ApiError.js"
 import {Apiresponse} from "../utils/Apiresponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
-import {uploadOnCloudinary} from "../utils/cloudinary.js"
+import uploadOnCloudinary from "../utils/cloudinary.js"
 
 
 const getAllVideos = asyncHandler(async (req, res) => {
-    const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query
+    let { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query
     //TODO: get all videos based on query, sort, pagination
 
     //we try using aggregation pipeline and using page and limit and skip
     
-
-    if (userId?.trim() === "") {
+    limit = parseInt(limit)
+    page = parseInt(page)
+    sortType = parseInt(sortType)
+    if (!isValidObjectId(userId)) {
         throw new ApiError(400, "User id is required");
     }
     const searchQuery = {
@@ -84,7 +86,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
     res
     .status(200)
     .json(
-        new ApiResponse(
+        new Apiresponse(
             200,
             videos,
             "Videos fetched successfully"
@@ -112,7 +114,9 @@ const publishAVideo = asyncHandler(async (req, res) => {
     const videoFile = await uploadOnCloudinary(localVideoPath)
     const thumbnailFile = await uploadOnCloudinary(localThumbnailPath)
 
-    if(!videoFile || !thumbnailFile) {
+    if([videoFile, thumbnailFile].some((file) => {
+        !file
+    })) {
         throw new ApiError(500, "Something went wrong while uploading video");
     }
     const video =await Video.create(
@@ -123,7 +127,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
             thumbnail : thumbnailFile?.url,
             videoFile : videoFile?.url,
             duration : videoFile?.duration,
-            isPublished : false,
+            isPublished : true,
 
         }
     )
@@ -146,6 +150,8 @@ const publishAVideo = asyncHandler(async (req, res) => {
 const getVideoById = asyncHandler(async (req, res) => {
     const { videoId } = req.params
     //get video by id
+    //console.log(videoId);
+    
     if(!isValidObjectId(videoId)) {
         throw new ApiError(400, "Invalid video id");
     }
@@ -153,7 +159,7 @@ const getVideoById = asyncHandler(async (req, res) => {
         [
             {
                 $match : {
-                    _id : videoId
+                    _id : new mongoose.Types.ObjectId(videoId),//videoId
                 }
             },
             {
@@ -181,7 +187,7 @@ const getVideoById = asyncHandler(async (req, res) => {
         ]
     )
 
-    if(!video) {
+    if(video?.length === 0) {
         throw new ApiError(404, "Video not found");
     }
 
@@ -233,6 +239,21 @@ const updateVideo = asyncHandler(async (req, res) => {
             thumbnail :thumbnail.url
         }
     )
+
+    if(!video) {
+        throw new ApiError(500, "Something went wrong while updating video");
+    }
+
+    res
+    .status(200)
+    .json(
+        new Apiresponse(
+            200,
+            video,
+            "Video updated successfully"
+        )
+    )
+
 })
 
 const deleteVideo = asyncHandler(async (req, res) => {
@@ -268,38 +289,47 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Invalid video id");
     }
 
-    const tooglepublish = await Video.findByIdAndUpdate(
-        {
-            _id : videoId
-        },
-        {
-           $set: {
-            isPublished : {
-                $not : ["$isPublished"]//used for query only
-            }
-        },
-            //or use equlity operator
-            // $set : {
-            //     isPublished : {
-            //         $eq : [false,"$isPublished"]}//this returns true if isPublished is false
-            // }
-        },
-        {
-            new : true
-        }
-    )
+    // const tooglepublish = await Video.findByIdAndUpdate(
+    //     {
+    //         _id : videoId
+    //     },
+    //     {
+    //     //    $set: {
+    //     //     isPublished : {
+    //     //         $not : ["$isPublished"]//used for query only
+    //     //     }
+    //     // },
+    //         //or use equlity operator
+    //         $set : {
+    //             isPublished : 
+    //             {
+    //                 $toBool: { $eq: [false, "$isPublished"] }
+    //             }//this returns true if isPublished is false
+    //         }
+    //     },
+    //     {
+    //         new : true
+    //     }
+    // )
+    const video = await Video.findById(videoId)
 
-    if (!tooglepublish) {
-        throw new ApiError(500, "Something went wrong while toggling publish status");
-        
+    if(!video) {
+        throw new ApiError(404, "Video not found");
     }
+
+    video.isPublished = !video.isPublished;
+    video.save()
+    // if (!tooglepublish) {
+    //     throw new ApiError(500, "Something went wrong while toggling publish status");
+        
+    // }
 
     res
     .status(200)
     .json(
         new Apiresponse(
             200,
-            tooglepublish,
+            video,
             "Publish status toggled successfully"
         )
     )
