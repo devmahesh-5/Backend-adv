@@ -18,11 +18,11 @@ const getVideoComments = asyncHandler(async (req, res) => {
             {
                 $search : {
                     index : "comments_index",
-                    text : {
-                        query :videoId,
-                        path : "video"
-                    },
-                    searchAfter : paginationToken || undefined
+                    equals: {
+                        path: "video", // Field in your index
+                        value: new mongoose.Types.ObjectId(videoId) // ObjectId to match
+                      },
+                    searchAfter : paginationToken || null
                 }
             },
             {
@@ -45,6 +45,7 @@ const getVideoComments = asyncHandler(async (req, res) => {
                     "owner._id" : 1,
                    "owner.fullName" : 1,
                     "owner.username" : 1,
+                    "owner.avatar" : 1,
                     paginationToken : { $meta : "searchSequenceToken" }
                 }
             }
@@ -72,8 +73,8 @@ const addComment = asyncHandler(async (req, res) => {
     const comment = await Comment.create(
         {
             content,
-            video : req.params.videoId,
-            owner : req.user._id
+            video : req.params?.videoId,
+            owner : req.user?._id
         }
 
     )
@@ -93,7 +94,6 @@ const addComment = asyncHandler(async (req, res) => {
 })
 
 const updateComment = asyncHandler(async (req, res) => {
-    
     const {commentId} = req.params
     const {content} = req.body
     if (content?.trim() === "" || commentId?.trim() === "") {
