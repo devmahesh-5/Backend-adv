@@ -38,7 +38,7 @@ const getUserPlaylists = asyncHandler(async (req, res) => {// we might use pagin
     if (userId?.trim() === "") {
         throw new ApiError(400, "User id is required");
     }
-    const userPlaylist = await Playlist.aggregation(
+    const userPlaylist = await Playlist.aggregate(
         [
             {
                 // $match: {//instead we can use $search { index:"index defined for playlist collection",{query: userId, path: "owner"} }
@@ -71,16 +71,16 @@ const getUserPlaylists = asyncHandler(async (req, res) => {// we might use pagin
 
                 $search : {
                     index : "playlist_index",
-                    text : { 
-                        query : userId,
-                        path : "owner"
-                        },
-                    searchAfter : paginationToken || undefined
+                    equals: {
+                        path: "owner", // Field in your index
+                        value: new mongoose.Types.ObjectId(userId)
+                    },
+                    searchAfter : paginationToken || null
                 },
             },
-                {
-                    $limit: 10
-                  },
+                // {
+                //     $limit: 10
+                //   },
             {
                 $lookup : {
                     from : "videos",
@@ -93,19 +93,22 @@ const getUserPlaylists = asyncHandler(async (req, res) => {// we might use pagin
                                 from : "users",
                                 localField : "owner",
                                 foreignField : "_id",
-                                as : "owner"
+                                as : "owner",
+                                pipeline : [
+                                    {
+                                        $project : {
+                                            fullName : 1,
+                                            username : 1,
+                                            avatar : 1
+                                        }
+                                    }
+                                ]
                             }
                         },
-                        {
-                            $project : {
-                                fullName : 1,
-                                username : 1,
-                                avatar : 1
-                            }
-                        },
+                        
                         { 
                             $addFields : {
-                                $first : "$owner"
+                               owner :{$first : "$owner"}
                             }
                         }
                     ]
@@ -151,8 +154,10 @@ const getPlaylistById = asyncHandler(async (req, res) => {
         [
             {
                 $match : {
-                    _id : mongoose.Types.ObjectId(playlistId)
-                },
+                    _id : new mongoose.Types.ObjectId(playlistId)
+                }
+            },
+            { 
                 $lookup :{
                     from : "videos",
                     localField : "videos",
@@ -171,19 +176,50 @@ const getPlaylistById = asyncHandler(async (req, res) => {
                                             fullName : 1,
                                             username : 1,
                                             avatar : 1
-                                        },
-                                        $addFields : {
-                                            $first : "$owner"
                                         }
-
                                     }
                                 ]
+                            }
+                        },
+                        {
+                            $addFields : {
+                                owner : {$first : "$owner"}
+                            }
+                        },
+                        {
+                            $project : {
+                                _id : 0,
+                                title : 1,
+                                thumbnail : 1,
+                                videoFile : 1,
+                                views : 1,
+                                owner : 1
                             }
                         }
                     ]
                 }
+            },
+            {
+                $project : {
+                    name : 1,
+                    description : 1,
+                    owner : 1,
+                    videos : 1
+                }
             }
     ])
+
+    if (!playlist) {
+        throw new ApiError(400, "Playlist not found");
+    }
+    
+    res.status(200).json(
+        new Apiresponse(
+            200,
+            playlist,
+            "Playlist fetched successfully"
+        )
+    )
 })
 
 const addVideoToPlaylist = asyncHandler(async (req, res) => {
@@ -195,17 +231,20 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
     // const playlist = await Playlist.findById(playlistId);
     // playlist.videos.push(videoId);
     // await playlist.save();
-    if (playlistId?.trim() === "" || videoId?.trim() === "") {
-        throw new ApiError(400, "Playlist id and video id are required");
+     
+    if (!isValidObjectId(playlistId) || !isValidObjectId(videoId)) {
+        throw new ApiError(400, "invalid Playlist id and video id");
     }
 
+   
+    
     const playlist = await Playlist.updateOne(
         {
             _id : playlistId
         },
         {
             $addToSet : {
-                videos : videoId
+                videos : videoId //add videoId
             }
         }
     )
@@ -229,8 +268,8 @@ const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
     const {playlistId, videoId} = req.params
     // TODO: remove video from playlist
 
-    if (playlistId?.trim() === "" || videoId?.trim() === "") {
-        throw new ApiError(400, "Playlist id and video id are required");
+    if (!isValidObjectId(playlistId) || !isValidObjectId(videoId)) {
+        throw new ApiError(400, "Invalid Playlist id and video id");
     }
 
     const playlist = await Playlist.updateOne(
