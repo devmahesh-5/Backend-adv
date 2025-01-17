@@ -35,8 +35,8 @@ const createPlaylist = asyncHandler(async (req, res) => {
 const getUserPlaylists = asyncHandler(async (req, res) => {// we might use pagination
     const {userId} = req.params
     const paginationToken = req.query.paginationToken
-    if (userId?.trim() === "") {
-        throw new ApiError(400, "User id is required");
+    if (!isValidObjectId(userId)) {
+        throw new ApiError(400, "Invalid User");
     }
     const userPlaylist = await Playlist.aggregate(
         [
@@ -146,8 +146,8 @@ const getPlaylistById = asyncHandler(async (req, res) => {
     //get videos from Video model by playlist id and join
     //get owner from User model by video owner id and join
 
-    if(playlistId?.trim() === "") {
-        throw new ApiError(400, "Playlist id is required");
+    if(!isValidObjectId(playlistId)) {
+        throw new ApiError(400, "Invalid Playlist id");
     }
 
     const playlist = await Playlist.aggregate(

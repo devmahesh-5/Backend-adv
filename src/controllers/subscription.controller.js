@@ -7,10 +7,14 @@ import {asyncHandler} from "../utils/asyncHandler.js"
 
 
 const toggleSubscription = asyncHandler(async (req, res) => {
-    const {channelId} = req.params
+    const {subscriberId} = req.params
+    if (!isValidObjectId(subscriberId)) {
+        throw new ApiError(400, "Subscriber id is required");
+    }
+
     const isSubscribed = await Subscription.findOne(
         {
-            channel: channelId,
+            channel: subscriberId,
             subscriber: req.user?._id
         }
     )
@@ -19,7 +23,7 @@ const toggleSubscription = asyncHandler(async (req, res) => {
         toggleSubscription = await Subscription.findByIdAndDelete(isSubscribed._id);
     }else {
         toggleSubscription = await Subscription.create({
-            channel: channelId,
+            channel: subscriberId,
             subscriber: req.user?._id
         })
     }
@@ -44,6 +48,10 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
     //now lookup user collection where _id is channel id
     //project subscriber field
     const {channelId} = req.params
+    if (!isValidObjectId(channelId)) {
+        throw new ApiError(400, "Subscriber id is required");
+    }
+
     const subscriberList = await Subscription.aggregate([
         {
             $match : {
@@ -103,7 +111,11 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
     //now group by subscriber and create an array of channels
     //now lookup user collection where _id is channels 
     //project channel field
-
+    
+    if(!isValidObjectId(subscriberId)){
+        throw new ApiError(400, "Subscriber id is required");
+    }
+    
     const subscribedChannels = await Subscription.aggregate([
         {
             $match : {
@@ -120,6 +132,7 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
         },
         {
             $project : {
+                _id : 0,
                 channels : 1
             }
         },
@@ -142,6 +155,7 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
             }
         },
     ])
+    
 
     if (!subscribedChannels) {
         throw new ApiError(500, "Something went wrong while getting channels");
@@ -149,7 +163,7 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
     res.status(200).json(
         new Apiresponse(
             200,
-            subscribedChannels[0].channels,
+            subscribedChannels,
             "Channels fetched successfully"
         )
     )
